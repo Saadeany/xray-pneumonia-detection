@@ -17,7 +17,9 @@ http://localhost:8000/docs
 
 
 4.docker setup
-docker compose build 
+
+docker compose build
+ 
 docker compose up
 
 test
