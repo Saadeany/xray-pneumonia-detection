@@ -1,0 +1,30 @@
+# ── LOCAL DEVELOPMENT OVERRIDE — applied automatically by docker-compose
+# ── This file is NOT used in production (do not deploy it)
+#
+# ── What it does:
+#      • Mounts api/ from your host → changes to app.py hot-reload without rebuild
+#      • Adds --reload flag to uvicorn
+#
+# ── Usage (no extra flags needed — docker-compose merges this automatically):
+#      docker-compose up
+#
+# ── To run WITHOUT this override (clean production build):
+#      docker-compose -f docker-compose.yml up
+
+version: "3.9"
+
+services:
+  api:
+    volumes:
+      # ── Mount live source over the baked copy in the image
+      # ── Edit api/app.py → uvicorn reloads automatically
+      # ── model.pth is also live-mounted so you can swap models without rebuilding
+      - ./api:/app/api
+    command:
+      - uvicorn
+      - api.app:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+      - --reload       # ← watches /app/api for file changes

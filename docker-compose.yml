@@ -1,0 +1,33 @@
+# ── Production compose file
+# ── Usage:
+#      docker-compose up --build    # first time, or after code changes
+#      docker-compose up -d         # start in background
+#      docker-compose down          # stop and remove containers
+#      docker-compose logs -f api   # stream logs
+
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: xray-pneumonia-api:latest   # named image makes docker run easier for teammates
+    container_name: xray-api
+    ports:
+      - "8000:8000"                    # host:container
+
+    # ── Docker polls /health every 30 s.
+    # ── start_period gives uvicorn time to load the model before the first check.
+    # ── If health fails 3 times the container is marked "unhealthy" (visible in docker ps).
+    healthcheck:
+      test: [
+        "CMD", "python3", "-c",
+        "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+      ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s   # model loading takes a few seconds on first startup
+
+    restart: unless-stopped   # auto-restart if it crashes; stop on docker-compose down
