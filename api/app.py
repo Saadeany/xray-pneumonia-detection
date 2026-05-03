@@ -14,6 +14,9 @@ CLASSES = ["NORMAL", "PNEUMONIA"]
 # ── Locally with `uvicorn api.app:app`: same logic applies ✓
 MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model.pth")
 
+# ── Set MODEL_TEST_MODE=1 in CI to skip loading a real model (health check only)
+TEST_MODE = os.environ.get("MODEL_TEST_MODE", "0") == "1"
+
 
 def load_model(path: str):
     # ── Architecture must exactly match src/train.py: resnet18 + 2-class head
@@ -35,25 +38,33 @@ def load_model(path: str):
 
 
 # ── Loaded once at startup — slow path happens here, not per-request
-model = load_model(MODEL_PATH)
+model = None if TEST_MODE else load_model(MODEL_PATH)
 
-# ── X-rays are grayscale; Grayscale(3) converts 1-channel → 3-channel
-# ── so the ResNet (which expects 3 channels) gets the right input shape
+# ── Preprocessing must exactly match src/dataset.py so the model sees the
+# ── same distribution at inference time as it did during training.
+# ── X-rays are grayscale; Grayscale(3) converts 1-channel → 3-channel.
 preprocess = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.Grayscale(num_output_channels=3),
     transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
 ])
 
 
 @app.get("/health")
 def health():
     """Liveness check — used by docker-compose healthcheck and load balancers."""
-    return {"status": "ok", "model_loaded": True}
+    return {"status": "ok", "model_loaded": not TEST_MODE}
 
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
+    if TEST_MODE:
+        raise HTTPException(
+            status_code=503,
+            detail="Server is running in test mode. No model is loaded."
+        )
+
     # ── Guard: reject non-image uploads before reading the full file
     if file.content_type and not file.content_type.startswith("image/"):
         raise HTTPException(
