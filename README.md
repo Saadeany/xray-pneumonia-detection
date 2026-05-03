@@ -130,10 +130,3 @@ docker rm -f test-ci
 ## Notebooks
 
 Open `notebooks/EDA.ipynb` for exploratory data analysis: class distribution, sample images, pixel intensity histograms, augmentation previews, and post-training confusion matrix / F1 charts.
-
----
-
-## Figure 8 — Imbalance Handling & Decision Threshold Tuning
-
-![Figure 8 — Imbalance Handling & Decision Threshold Tuning](image.png)
-
