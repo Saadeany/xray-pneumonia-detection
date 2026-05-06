@@ -5,11 +5,84 @@
 
 ---
 
-## 📌 Overview
+# 🚀 Quick Start — Local Deployment
+
+## 📋 Prerequisites
+
+Before deployment, install:
+
+* **Docker Desktop** (v24.0+)
+* **Node.js** (v18.0+)
+* **Git**
+
+---
+
+## 🧭 Step 1 — Clone the Repository
+
+```bash id="clone01"
+git clone https://github.com/Saadeany/xray-pneumonia-detection.git
+cd xray-pneumonia-detection
+```
+
+---
+
+## 🏗 Step 2 — Boot the Distributed Backend
+
+Launch the complete **6-container microservice mesh**:
+
+```bash id="backend01"
+docker-compose up --build
+```
+
+### This initializes:
+
+* FastAPI Gateway
+* RabbitMQ Broker
+* PyTorch Classifier
+* Severity Engine
+* Info Injector
+* Audit Logger
+
+> **Important:** Wait until:
+>
+> * Gateway exposes **localhost:8000**
+> * RabbitMQ fully initializes
+
+---
+
+## 🖥 Step 3 — Boot the Frontend Client
+
+Open a **new terminal window**:
+
+```bash id="frontend01"
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## 🌐 Launch URLs
+
+| Service                  | URL                    |
+| ------------------------ | ---------------------- |
+| **Frontend Application** | http://localhost:5173  |
+| **FastAPI Gateway**      | http://localhost:8000  |
+| **RabbitMQ Dashboard**   | http://localhost:15672 |
+
+---
+
+## ✅ System Status
+
+Once both frontend and backend are running, the full AI-powered pneumonia detection platform is live.
+
+---
+
+# 📌 Overview
 
 This project is a production-oriented **AI-powered chest X-ray pneumonia detection platform** designed to minimize false negatives in high-risk clinical scenarios.
 
-Unlike conventional prototypes, this system is architected as a **microservice mesh**, separating inference, triage, metadata injection, and compliance logging into independently scalable services.
+Unlike conventional prototypes, this system is architected as a **distributed microservice ecosystem**, separating inference, triage, metadata injection, and compliance logging into independently scalable services.
 
 ### Core Design Priorities:
 
@@ -57,7 +130,7 @@ Each service performs one dedicated responsibility, improving modularity, observ
 
 ## 🔄 Request Lifecycle
 
-```plaintext
+```plaintext id="flow01"
 User Uploads X-Ray
        ↓
  FastAPI Gateway
@@ -77,72 +150,9 @@ User Uploads X-Ray
 
 ---
 
-# 🚀 Getting Started
-
-## 📋 Prerequisites
-
-Before deployment, ensure the following are installed:
-
-* **Docker Desktop** (v24.0+)
-* **Node.js** (v18.0+)
-* **Git**
-
----
-
-# ⚙️ Local Deployment
-
-## 1️⃣ Clone the Repository
-
-```bash
-git clone https://github.com/Saadeany/xray-pneumonia-detection.git
-cd xray-pneumonia-detection
-```
-
----
-
-## 2️⃣ Boot the Distributed Backend
-
-Launch the full **6-container microservice mesh**.
-The `--build` flag ensures all localized dependencies are freshly compiled.
-
-```bash
-docker-compose up --build
-```
-
-> Wait for:
->
-> * FastAPI Gateway to expose **port 8000**
-> * RabbitMQ to complete startup successfully
-
----
-
-## 3️⃣ Boot the Frontend Client
-
-Open a **new terminal window** to avoid blocking backend service logs.
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## 🌐 Application Access Points
-
-| Service            | URL                    |
-| ------------------ | ---------------------- |
-| Frontend Client    | http://localhost:5173  |
-| FastAPI Gateway    | http://localhost:8000  |
-| RabbitMQ Dashboard | http://localhost:15672 |
-
-> Once both backend and frontend are running, the platform is fully operational.
-
----
-
 # 📂 Repository Structure
 
-```plaintext
+```plaintext id="repo01"
 xray-pneumonia-detection/
 │
 ├── frontend/                    # React + Vite client
@@ -182,7 +192,7 @@ In healthcare AI:
 
 ### Therefore:
 
-**High Recall > High Accuracy**
+## **High Recall > High Accuracy**
 
 ---
 
@@ -214,27 +224,6 @@ This ensures:
 * Compliance
 * Version transparency
 * Clinical accountability
-
----
-
-# 🤝 Team Collaboration Guidelines
-
-## Branching Rules:
-
-```plaintext
-feature/classifier-upgrade
-feature/gateway-auth
-feature/frontend-dashboard
-feature/logger-enhancement
-```
-
----
-
-## Mandatory Restrictions:
-
-* ❌ No direct push to `main`
-* ❌ No unreviewed `docker-compose.yml` changes
-* ❌ No schema modifications without team approval
 
 ---
 
