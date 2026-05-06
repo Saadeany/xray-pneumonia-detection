@@ -1,0 +1,17 @@
+# ── Exclude large/irrelevant directories from the Docker build context
+# ── Only api/ (and requirements-api.txt) need to be in the image
+
+data/
+src/
+notebooks/
+tests/
+*.zip
+*.tar.gz
+__pycache__/
+*.pyc
+.git/
+.gitignore
+README.md
+setup_data.py
+requirements.txt
+docker-compose*.yml
