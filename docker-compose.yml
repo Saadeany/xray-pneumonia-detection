@@ -1,33 +1,79 @@
-# ── Production compose file
-# ── Usage:
-#      docker-compose up --build    # first time, or after code changes
-#      docker-compose up -d         # start in background
-#      docker-compose down          # stop and remove containers
-#      docker-compose logs -f api   # stream logs
-
-version: "3.9"
-
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: xray-pneumonia-api:latest   # named image makes docker run easier for teammates
-    container_name: xray-api
+  # ── 1. The Post Office (Message Broker) ──
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: xray-rabbitmq
     ports:
-      - "8000:8000"                    # host:container
-
-    # ── Docker polls /health every 30 s.
-    # ── start_period gives uvicorn time to load the model before the first check.
-    # ── If health fails 3 times the container is marked "unhealthy" (visible in docker ps).
+      - "5672:5672"   # RabbitMQ Port
+      - "15672:15672" # Management UI Port
     healthcheck:
-      test: [
-        "CMD", "python3", "-c",
-        "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
-      ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 20s   # model loading takes a few seconds on first startup
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s # Crucial: Gives the 5 plugins time to boot
 
-    restart: unless-stopped   # auto-restart if it crashes; stop on docker-compose down
+  # ── 2. The ML Brain (ResNet18 Inference) ──
+  classifier:
+    build:
+      context: ./services/classifier
+      dockerfile: Dockerfile
+    container_name: xray-classifier
+    # Running ResNet18 with xray_classifier.pth
+    restart: always
+
+  # ── 3. The Clinical Logic (Triage) ──
+  severity:
+    build:
+      context: ./services/severity
+      dockerfile: Dockerfile
+    container_name: xray-severity
+    restart: always
+
+  # ── 4. The Shield (Metadata & Disclaimers) ──
+  info:
+    build:
+      context: ./services/info
+      dockerfile: Dockerfile
+    container_name: xray-info
+    restart: always
+
+  # ── 5. The Conductor (API Gateway) ──
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    container_name: xray-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  # ── 6. The Memory (Audit Logger) ──
+  logger:
+    build:
+      context: ./services/logger
+      dockerfile: Dockerfile
+    container_name: xray-logger
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  # ── 7. The Client (React UI) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: xray-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway
+    restart: always
