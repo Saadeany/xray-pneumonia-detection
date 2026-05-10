@@ -47,7 +47,7 @@ function App() {
     try {
       await addLog("[ML] ResNet18 spatial feature extraction active...", 300)
 
-      const response = await fetch("http://localhost:8000/analyze", {
+      const response = await fetch("http://localhost:8000/predict", {
         method: "POST",
         body: formData,
       })
@@ -78,7 +78,7 @@ function App() {
   }
 
   // Next-Gen Medical Palette: Emerald for Healthy, Crimson/Rose for Infected
-  const isNormal = results?.results?.diagnosis === "NORMAL"
+  const isNormal = results?.diagnosis === "NORMAL"
   const themeColor = isNormal ? "#10b981" : "#f43f5e"
 
   return (
@@ -160,7 +160,7 @@ function App() {
                <div className="metric-box confidence-box">
                   <label>NEURAL NETWORK CONFIDENCE</label>
                   <div className="value" style={{ color: themeColor }}>
-                    {(results.results.confidence * 100).toFixed(1)}%
+                    {(results.confidence * 100).toFixed(1)}%
                   </div>
                </div>
 
@@ -168,7 +168,7 @@ function App() {
                 <h1 style={{ color: themeColor }}>
                   {isNormal ? "Negative (Clear)" : "Positive (Infected)"}
                 </h1>
-                <p>Radiological Assessment — {results.results.diagnosis}</p>
+                <p>Radiological Assessment — {results.diagnosis}</p>
               </div>
 
               <div className="severity-block">
@@ -177,7 +177,7 @@ function App() {
                   <div
                     className="progress-fill"
                     style={{
-                      width: `${results.results.pneumonia_probability * 100}%`,
+                      width: `${results.pneumonia_probability * 100}%`,
                       background: themeColor,
                       boxShadow: `0 0 15px ${themeColor}66`
                     }}
@@ -185,13 +185,13 @@ function App() {
                 </div>
                 <div className="risk-row">
                   <span className="risk-badge" style={{ color: themeColor, borderColor: themeColor, background: `${themeColor}11` }}>
-                    {results.triage.risk_level} Priority
+                    {results.risk_level} Priority
                   </span>
-                  <span className="risk-percent">{(results.results.pneumonia_probability * 100).toFixed(1)}% Pathology Marker</span>
+                  <span className="risk-percent">{(results.pneumonia_probability * 100).toFixed(1)}% Pathology Marker</span>
                 </div>
 
                 <div className="action-box">
-                  <strong>Recommended Protocol:</strong> {results.triage.recommended_action}
+                  <strong>Recommended Protocol:</strong> {results.disclaimer}
                 </div>
               </div>
             </div>
