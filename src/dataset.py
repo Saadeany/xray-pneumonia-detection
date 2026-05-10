@@ -14,7 +14,7 @@ def get_dataloaders(data_dir, batch_size=32):
     - WeightedRandomSampler is recalculated after any val split adjustment
     """
 
-    # ── Training transform: augmentation + normalization
+    # Training transform: augmentation + normalization
     train_transform = transforms.Compose([
         transforms.Resize((128, 128)),
         transforms.Grayscale(num_output_channels=3),        # Grayscale → RGB for ResNet
@@ -26,7 +26,7 @@ def get_dataloaders(data_dir, batch_size=32):
         transforms.Normalize([0.5] * 3, [0.5] * 3),
     ])
 
-    # ── Val/Test transform: no augmentation, just resize + normalize
+    # Val/Test transform: no augmentation, just resize + normalize
     eval_transform = transforms.Compose([
         transforms.Resize((128, 128)),
         transforms.Grayscale(num_output_channels=3),
@@ -34,7 +34,7 @@ def get_dataloaders(data_dir, batch_size=32):
         transforms.Normalize([0.5] * 3, [0.5] * 3),
     ])
 
-    # ── Load splits
+    # Load splits
     train_data = datasets.ImageFolder(f"{data_dir}/train", transform=train_transform)
     val_data   = datasets.ImageFolder(f"{data_dir}/val",   transform=eval_transform)
     test_data  = datasets.ImageFolder(f"{data_dir}/test",  transform=eval_transform)
