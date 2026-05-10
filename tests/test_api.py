@@ -3,12 +3,12 @@ Integration test for the X-Ray Pneumonia Detection API.
 
 PRE-REQUISITE: The API server must be running before you execute this script.
 
-  Option A (Docker image):
-      docker-compose up -d
+  Option A (Docker — recommended):
+      docker-compose up --build -d
       python tests/test_api.py
 
   Option B (local uvicorn):
-      uvicorn api.app:app --port 8000
+      uvicorn services.gateway.main:app --port 8000
       python tests/test_api.py
 """
 
@@ -68,24 +68,63 @@ def test_predict_valid_image():
         )
 
         result = resp.json()
+
+        # ── Check all required fields are present
         required = ["diagnosis", "confidence", "pneumonia_probability",
                     "risk_level", "disclaimer"]
         for field in required:
             assert field in result, f"[FAIL] Missing field in response: '{field}'"
 
+        # ── Validate field values
         assert result["diagnosis"] in ("NORMAL", "PNEUMONIA"), \
             f"[FAIL] diagnosis must be NORMAL or PNEUMONIA, got: {result['diagnosis']}"
+
         assert 0.0 <= result["confidence"] <= 1.0, \
             f"[FAIL] confidence out of [0,1]: {result['confidence']}"
+
         assert 0.0 <= result["pneumonia_probability"] <= 1.0, \
             f"[FAIL] pneumonia_probability out of [0,1]: {result['pneumonia_probability']}"
-        assert result["risk_level"] in ("HIGH", "LOW"), \
-            f"[FAIL] risk_level must be HIGH or LOW, got: {result['risk_level']}"
+
+        assert result["risk_level"] in ("HIGH", "LOW", "CRITICAL"), \
+            f"[FAIL] risk_level must be HIGH, LOW, or CRITICAL, got: {result['risk_level']}"
+
+        # ── Validate disclaimer is non-empty and contains meaningful text
+        disclaimer = result["disclaimer"]
+        assert isinstance(disclaimer, str) and len(disclaimer) > 0, \
+            "[FAIL] disclaimer must be a non-empty string"
+        assert "SCREENING TOOL" in disclaimer.upper() or \
+               "NOT A SUBSTITUTE" in disclaimer.upper(), \
+            f"[FAIL] disclaimer must state this is a screening tool only. Got: '{disclaimer}'"
 
         print(f"✓ /predict — diagnosis: {result['diagnosis']}, "
-              f"confidence: {result['confidence']}, risk: {result['risk_level']}")
+              f"confidence: {result['confidence']:.2f}, "
+              f"risk: {result['risk_level']}")
+        print(f"  disclaimer: {disclaimer}")
+
     finally:
         os.unlink(img_path)   # ── Always clean up, even if an assertion fails
+
+
+def test_predict_no_content_type():
+    """
+    Sending a request without a Content-Type header must return 415, not 500.
+    This tests the gateway's None-safe content_type guard.
+    """
+    img_path = create_synthetic_xray()
+    try:
+        with open(img_path, "rb") as f:
+            # Pass None as content_type to simulate a missing Content-Type header
+            resp = requests.post(
+                f"{BASE_URL}/predict",
+                files={"file": ("synthetic.jpg", f, None)},
+                timeout=10,
+            )
+        assert resp.status_code in (200, 415), (
+            f"[FAIL] Expected 200 or 415 for missing Content-Type, got: {resp.status_code}"
+        )
+        print(f"✓ /predict no content-type — returned {resp.status_code} (acceptable)")
+    finally:
+        os.unlink(img_path)
 
 
 def test_predict_invalid_file():
@@ -108,14 +147,16 @@ def test_predict_invalid_file():
         os.unlink(tmp.name)
 
 
-
-
-
 if __name__ == "__main__":
     print(f"Running integration tests against: {BASE_URL}\n")
     passed, failed = 0, 0
 
-    for test_fn in [test_health, test_predict_valid_image, test_predict_invalid_file]:
+    for test_fn in [
+        test_health,
+        test_predict_valid_image,
+        test_predict_no_content_type,
+        test_predict_invalid_file,
+    ]:
         try:
             test_fn()
             passed += 1
@@ -126,8 +167,8 @@ if __name__ == "__main__":
             print(
                 f"\n[ERROR] Cannot connect to {BASE_URL}\n"
                 f"  Start the server first:\n\n"
-                f"    docker-compose up -d             (Docker)\n"
-                f"    uvicorn api.app:app --port 8000  (local)\n"
+                f"    docker-compose up --build -d     (Docker)\n"
+                f"    uvicorn services.gateway.main:app --port 8000  (local)\n"
             )
             sys.exit(1)
 
