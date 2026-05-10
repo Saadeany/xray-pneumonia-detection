@@ -23,7 +23,7 @@ def evaluate_model(y_true, y_pred, y_prob=None):
     # ── 1. Confusion Matrix
     cm = confusion_matrix(y_true, y_pred)
     print("\nConfusion Matrix (rows=Actual, cols=Predicted):")
-    print(f"              NORMAL  PNEUMONIA")
+    print(f"         NORMAL  PNEUMONIA")
     print(f"  NORMAL    {cm[0][0]:>6}  {cm[0][1]:>9}")
     print(f"  PNEUMONIA {cm[1][0]:>6}  {cm[1][1]:>9}")
 
@@ -39,11 +39,11 @@ def evaluate_model(y_true, y_pred, y_prob=None):
     )
 
     result = {
-        "confusion_matrix": cm.tolist(),
+        "confusion_matrix":  cm.tolist(),
         "report": report_dict,
     }
 
-    # ── 3. ROC-AUC (requires probabilities, not just predictions)
+    # ── 3. ROC-AUC  (requires probabilities, not just predictions)
     if y_prob is not None:
         roc_auc = roc_auc_score(y_true, y_prob)
         print(f"ROC-AUC Score : {roc_auc:.4f}")
@@ -51,7 +51,7 @@ def evaluate_model(y_true, y_pred, y_prob=None):
     else:
         print("ROC-AUC       : N/A (pass y_prob to enable)")
 
-    # ── 4. Threshold Tuning — find optimal threshold for Recall ≥ 90%
+    # ── 4. Threshold Tuning  —  find optimal threshold for Recall ≥ 90%
     if y_prob is not None:
         optimal = tune_threshold(y_true, y_prob, target_recall=0.90)
         result["optimal_threshold"] = optimal
