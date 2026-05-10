@@ -5,8 +5,10 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from PIL import Image, UnidentifiedImageError
 from torchvision import transforms, models
 
+# Initialize FastAPI application
 app = FastAPI(title="X-Ray Pneumonia Classifier API")
 
+# Output classes for prediction
 CLASSES = ["NORMAL", "PNEUMONIA"]
 
 # ── Robust Path Resolution: Always finds the model no matter where Docker runs it
@@ -15,9 +17,13 @@ MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "xray_clas
 
 def load_model(path: str):
     """Loads the ResNet18 model trained for binary classification."""
+
+    # Create ResNet18 architecture
     model = models.resnet18(weights=None)
+    # Replace final layer for binary classification
     model.fc = torch.nn.Linear(model.fc.in_features, 2)
 
+    # Ensure model file exists before loading
     if not os.path.exists(path):
         raise FileNotFoundError(
             f"[STARTUP ERROR] Model not found at: {path}\n"
@@ -58,6 +64,7 @@ async def predict(file: UploadFile = File(...)):
 
     try:
         raw_bytes = await file.read()
+        # Convert uploaded image into RGB format
         img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
     except UnidentifiedImageError:
         raise HTTPException(status_code=422, detail="Cannot decode image. Send a valid JPEG/PNG.")
